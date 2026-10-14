@@ -1,4 +1,3 @@
-```dockerfile
 # NVIDIA CUDA-enabled PyTorch runtime.
 # Deploy on a Koyeb GPU instance.
 FROM pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime
@@ -35,4 +34,3 @@ RUN mkdir -p /data/models /data/huggingface /data/modelscope \
 EXPOSE 8000
 
 CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --timeout-keep-alive 75"]
-```
