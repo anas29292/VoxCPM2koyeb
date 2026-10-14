@@ -314,7 +314,6 @@ def _generate_audio(req: TTSRequest) -> tuple[bytes, int, float]:
             "normalize": req.normalize,
             "denoise": req.denoise,
             "retry_badcase": req.retry_badcase,
-            "seed": req.seed,
         }
         if reference_path:
             kwargs["reference_wav_path"] = str(reference_path)
