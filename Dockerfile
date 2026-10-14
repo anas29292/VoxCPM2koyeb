@@ -1,16 +1,36 @@
-FROM vllm/vllm-omni:nightly
 
-ENV PYTHONUNBUFFERED=1 \
-    HF_HOME=/root/.cache/huggingface \
-    PORT=8000 \
-    GPU_MEMORY_UTILIZATION=0.70 \
-    MAX_NUM_SEQS=1
+FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
 
-RUN uv pip install \
-    --python "$(python3 -c 'import sys; print(sys.executable)')" \
-    --no-cache-dir \
-    "voxcpm>=2.0" soundfile httpx ninja
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    DATA_DIR=/data \
+    MODEL_ID=openbmb/VoxCPM2 \
+    MODEL_PATH=/data/models/VoxCPM2 \
+    HF_HOME=/data/huggingface \
+    MODELSCOPE_CACHE=/data/modelscope \
+    DEVICE=cuda \
+    OPTIMIZE=0 \
+    LOAD_DENOISER=0 \
+    PORT=8000
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates curl ffmpeg libsndfile1 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt /app/requirements.txt
+
+RUN python -m pip install --upgrade pip setuptools wheel \
+    && python -m pip install --no-cache-dir "torchcodec==0.2.0" \
+    && python -m pip install --no-cache-dir -r /app/requirements.txt
+
+COPY app.py /app/app.py
+
+RUN mkdir -p /data/models /data/huggingface /data/modelscope \
+    && chmod -R a+rwX /data
 
 EXPOSE 8000
 
-CMD ["sh", "-lc", "exec vllm serve openbmb/VoxCPM2 --omni --host 0.0.0.0 --port ${PORT:-8000} --gpu-memory-utilization ${GPU_MEMORY_UTILIZATION:-0.70} --max-num-seqs ${MAX_NUM_SEQS:-1} --api-key \"$API_KEY\""]
+CMD ["sh", "-c", "exec uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --timeout-keep-alive 75"]
