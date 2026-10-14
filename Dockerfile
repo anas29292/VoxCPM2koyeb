@@ -1,4 +1,6 @@
-# NVIDIA CUDA-enabled PyTorch runtime. Koyeb must deploy this on a GPU instance.
+```dockerfile
+# NVIDIA CUDA-enabled PyTorch runtime.
+# Deploy on a Koyeb GPU instance.
 FROM pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -18,13 +20,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+
 COPY requirements.txt /app/requirements.txt
+
 RUN python -m pip install --upgrade pip setuptools wheel \
     && python -m pip install -r /app/requirements.txt
 
-COPY app.py download_model.py test_api.py README_ID.md .env.example /app/
+# FIX: Removed .env.example because it is missing from the repository.
+COPY app.py download_model.py test_api.py README_ID.md /app/
+
 RUN mkdir -p /data/models /data/huggingface /data/modelscope \
     && chmod -R a+rwX /data
 
 EXPOSE 8000
+
 CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --timeout-keep-alive 75"]
+```
